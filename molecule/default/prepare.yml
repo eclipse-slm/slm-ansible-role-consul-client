@@ -1,0 +1,10 @@
+---
+- name: Prepare
+  hosts: molecule-consul
+  gather_facts: false
+  tasks:
+    # Required for running Ansible tasks inside the container:
+    - name: Install python
+      ansible.builtin.raw: test -e /usr/bin/python || (apk add python3)
+      register: result
+      changed_when: result.stdout | length > 0

@@ -1,0 +1,53 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: molecule-consul
+  gather_facts: false # Quicker, if you do not need facts
+  vars_files:
+    - env.yml
+    - vars/main.yml
+  tasks:
+    - name: VERIFY | REGISTER_SERVICE
+      block:
+        - name: Get Consul Services
+          ansible.builtin.command: consul catalog services -tags
+          register: catalog_services
+          changed_when: false
+
+        - name: Assert Consul Service Name is in Response
+          ansible.builtin.assert:
+            that:
+              - consul_service_name in catalog_services.stdout
+            fail_msg: "Consul service '{{ consul_service_name }}' not found in catalog services"
+            success_msg: "Consul service '{{ consul_service_name }}' found in catalog services"
+
+    - name: VERIFY | CREATE_OR_ADD_CONFIG / STORE_APP_CONFIG
+      block:
+        - name: Get Consul KV for App Config
+          ansible.builtin.command: consul kv get config/{{ consul_service_name }}/data
+          register: app_config_kv
+          changed_when: false
+
+        - name: Assert Consul App Config is as Expected
+          ansible.builtin.assert:
+            that:
+              - app_config_kv.stdout | from_yaml == ( consul_service_config | combine(consule_service_new_config_entry) )
+            fail_msg: "Consul app config for '{{ consul_service_name }}' does not match expected config"
+            success_msg: "Consul app config for '{{ consul_service_name }}' matches expected config"
+
+    - name: VERIFY | GET_APP_CONFIG
+      block:
+        - name: Get App Config from Role
+          ansible.builtin.include_role:
+            name: consul-client
+            tasks_from: get_app_config
+          vars:
+            _app_name: "{{ consul_service_name }}"
+
+        - name: Assert App Config from Role is as Expected
+          ansible.builtin.assert:
+            that:
+              - app_configs[consul_service_name] == ( consul_service_config | combine(consule_service_new_config_entry) )
+            fail_msg: "App config retrieved by role for '{{ consul_service_name }}' does not match expected config"
+            success_msg: "App config retrieved by role for '{{ consul_service_name }}' matches expected config"

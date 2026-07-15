@@ -1,0 +1,50 @@
+---
+# Purpose: bring the instance to the desired state by running the role under test.
+# Molecule calls this playbook with `molecule converge`.
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: false # Disable if your role does not rely on facts
+  vars_files:
+    - env.yml
+    - vars/main.yml
+  tasks:
+    - name: Apply role | REGISTER_SERVICE
+      ansible.builtin.include_role:
+        name: consul-client
+        tasks_from: register_service
+      vars:
+        _service_name: "{{ consul_service_name }}"
+        _service_port: "{{ consul_service_port }}"
+        _service_address: "{{ consul_service_address }}"
+
+    - name: Apply role | CREATE_OR_ADD_CONFIG
+      ansible.builtin.include_role:
+        name: consul-client
+        tasks_from: create_or_add_config
+      vars:
+        _app_name: "{{ consul_service_name }}"
+        _config: "{{ consul_service_config }}"
+
+    - name: Print Current App Configs
+      ansible.builtin.debug:
+        var: app_configs
+
+    - name: Add new key to current App Config
+      ansible.builtin.set_fact:
+        app_configs: "{{ app_configs | combine({consul_service_name: app_configs[consul_service_name] | combine(consule_service_new_config_entry)}) }}"
+
+    - name: Apply role | STORE_APP_CONFIG
+      ansible.builtin.include_role:
+        name: consul-client
+        tasks_from: store_app_config
+      vars:
+        _app_name: "{{ consul_service_name }}"
+
+    # - name: Apply role under test | CREATE_ROLE
+    #   ansible.builtin.include_role:
+    #     name: consul-client
+    #     tasks_from: create_role
+    #   vars:
+    #     _role_name: "{{ consul_role_name }}"
+    #     _policies
