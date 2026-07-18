@@ -4,10 +4,10 @@
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)     # Scheme of the Consul instance
       - (ENV.CONSUL.HOST.INTERNAL is defined) and (ENV.CONSUL.HOST.INTERNAL|length > 0)         # Host of the Consul instance
-      - (ENV.CONSUL.PORT.INTERNAL is defined)                                      # Port of the Consul instance
-      - (_consul_token is defined) and (_consul_token|length > 0)     # Token to authenticate with Consul
-      - (_app_name is defined) and (_app_name|length > 0)             # Name of the app for which the config should be stored
-      - (_config is defined) and (_config|length > 0)                 # Dictionary with config values that should be created or added to existing config
+      - (ENV.CONSUL.PORT.INTERNAL is defined)                                                   # Port of the Consul instance
+      - (_consul_token is defined) and (_consul_token|length > 0)                               # Token to authenticate with Consul
+      - (_app_name is defined) and (_app_name|length > 0)                                       # Name of the app for which the config should be stored
+      - (_config is defined) and (_config|length > 0)                                           # Dictionary with config values that should be created or added to existing config
 
 - name: Make sure py-consul is installed for the lookup plugin 'consul_kv'
   ansible.builtin.pip:
@@ -15,24 +15,35 @@
     state: present
     break_system_packages: true
 
-- name: "Set Consul KV path for config of app '{{ _app_name }}'"
+- name: "Set Consul KV path for app '{{ _app_name }}'"
   ansible.builtin.set_fact:
     __consul_kv_path: "config/{{ _app_name }}/data"
 
 - name: "Check if config exists in Consul at '{{ __consul_kv_path }}'"
+  ansible.builtin.uri:
+    url: "{{ ENV.CONSUL.SCHEME.INTERNAL }}://{{ ENV.CONSUL.HOST.INTERNAL }}:{{ ENV.CONSUL.PORT.INTERNAL }}/v1/kv/{{ __consul_kv_path }}"
+    method: GET
+    headers:
+      "X-Consul-Token": "{{ _consul_token }}"
+    return_content: true
+    status_code: 200,404
+  register: app_config_consul_response
+
+- name: "Extract config from Consul response (if exists)"
+  when:
+    - (app_config_consul_response.json is defined) and (app_config_consul_response.json | length > 0)
+    - ((app_config_consul_response.json | first).Value is defined) and ((app_config_consul_response.json | first).Value | length > 0)
   ansible.builtin.set_fact:
-    app_config_consul: >-
-      {{ lookup('community.general.consul_kv',
-          __consul_kv_path,
-          scheme=ENV.CONSUL.SCHEME.INTERNAL,
-          host=ENV.CONSUL.HOST.INTERNAL,
-          port=ENV.CONSUL.PORT.INTERNAL,
-          token=_consul_token)
-      | from_yaml }}
+    app_config_consul: "{{ (app_config_consul_response.json | first).Value | b64decode | from_yaml }}"
+
+- name: "Set default to app_config_consul if response is empty"
+  when: (app_config_consul is not defined)
+  ansible.builtin.set_fact:
+    app_config_consul: {}
 
 - name: "Combine existing config in Consul with config values that should be created or updated"
   ansible.builtin.set_fact:
-    _config_combined: "{{ app_config_consul | from_yaml | combine(_config, recursive=true) }}"
+    _config_combined: "{{ (app_config_consul | combine(_config, recursive=true)) | default({}) }}"
 
 - name: "Store config in Consul to '{{ __consul_kv_path }}'"
   community.general.consul_kv:
@@ -45,6 +56,6 @@
 - name: "Add config to variable app_configs['{{ _app_name }}']"
   ansible.builtin.set_fact:
     app_configs: "{{ app_configs | default({}) | combine(
-    {
+    { 
       _app_name: _config_combined
     }, recursive=true) }}"
