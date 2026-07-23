@@ -1,0 +1,39 @@
+---
+### Inputs:
+- name: "Assert inputs of utils | app_config_add_user.yml"
+  ansible.builtin.assert:
+    that:
+      - (_app_name is defined) and (_app_name | length > 0)
+      - (_username is defined) and (_username | length > 0)
+    fail_msg: "Missing required input variables for utils | app_config_add_user"
+
+### Optional:
+#    - _password: Password for the user. If not provided, a random password will be generated.
+
+- name: "{{ _app_name }} | Create password for user '{{ _username }}'"
+  ansible.builtin.set_fact:
+    __password: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_lowercase', 'ascii_uppercase', 'digits'], length=24) }}"
+  when: (_password is not defined) or (_password | length == 0)
+
+- name: "{{ _app_name }} | Use provided password for user '{{ _username }}'"
+  ansible.builtin.set_fact:
+    __password: "{{ _password }}"
+  when: (_password is defined) and (_password | length > 0)
+
+- name: "{{ _app_name }} | Update config dictionary and override default values"
+  when: (app_configs[_app_name].users[_username].password is not defined) or (app_configs[_app_name].users[_username].password | length == 0)
+  ansible.builtin.set_fact:
+    app_configs: "{{ app_configs | default({}) | combine(
+        {
+          _app_name: {
+            'users': {
+              _username: {
+                'username': _username,
+                'password': __password
+              }
+            }
+          }
+        }, recursive=true) }}"
+
+- name: "{{ _app_name }} | Store config in Consul"
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/store_app_config.yml"
