@@ -9,7 +9,7 @@
       - (_resource_name is defined) and (_resource_name|length > 0)                                 # Name of the service
       - (_resource_id is defined) and (_resource_id|length > 0)                                   # ID of the resource
       - (_resource_address is defined) and (_resource_address|length > 0)
-      - (_resource_remote_access_service_id is defined) and (_resource_remote_access_service_id|length > 0)  # Remote access service ID                                                                                 # Meta data of the service
+      # - (_resource_remote_access_service_id is defined) and (_resource_remote_access_service_id|length > 0)  # Remote access service ID                                                                                 # Meta data of the service
 
 ### Optional Inputs:
 # - _consul_datacenter: Datacenter of the resource (default: fabos)
