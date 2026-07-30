@@ -1,5 +1,5 @@
 ### Inputs
-- name: "Assert inputs of 'consul/client | register_service.yml'"
+- name: "CONSUL_CLIENT | Assert inputs of 'consul/client | register_service.yml'"
   ansible.builtin.assert:
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)       # Scheme of the Consul instance
@@ -13,18 +13,18 @@
       # _additional_tags                                                                          # Additional tags of the service in addition to the default ones
       # _meta                                                                                      # Meta data of the service
 
-- name: "Set default tags for service '{{ _service_name }}'"
+- name: "CONSUL_CLIENT | Set default tags for service '{{ _service_name }}'"
   ansible.builtin.set_fact:
-    tags:
+    consul_tags:
       - "slm"
       - "backend"
 
-- name: "Add additional tags for service '{{ _service_name }}'"
+- name: "CONSUL_CLIENT | Add additional tags for service '{{ _service_name }}'"
   ansible.builtin.set_fact:
-    tags: "{{ tags + _additional_tags | default([]) }}"
+    consul_tags: "{{ consul_tags + _additional_tags | default([]) }}"
 
 
-- name: "Register service '{{ _service_name }}' at Consul (discovery server)"
+- name: "CONSUL_CLIENT | Register service '{{ _service_name }}' at Consul (discovery server)"
   community.general.consul_agent_service:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -33,10 +33,10 @@
     name: "{{ _service_name }}"
     service_port: "{{ _service_port }}"
     address: "{{ _service_address }}"
-    tags: "{{ tags }}"
+    tags: "{{ consul_tags }}"
     meta: "{{ _meta | default({}) }}"
 
-- name: "Register HTTP health check for service '{{ _service_name }}' at Consul (discovery server)"
+- name: "CONSUL_CLIENT | Register HTTP health check for service '{{ _service_name }}' at Consul (discovery server)"
   community.general.consul_agent_check:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -48,7 +48,7 @@
     http: "{{ _http }}"
   when: (_http is defined) and (_http|length > 0)
 
-- name: "Register TCP health check for service '{{ _service_name }}' at Consul (discovery server)"
+- name: "CONSUL_CLIENT | Register TCP health check for service '{{ _service_name }}' at Consul (discovery server)"
   community.general.consul_agent_check:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
