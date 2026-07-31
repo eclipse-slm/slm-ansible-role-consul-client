@@ -13,15 +13,16 @@
 
 ### Optional Inputs:
 # - _consul_datacenter: Datacenter of the resource (default: fabos)
+# - _consul_service_name: Name of the remote access service (default: ssh)
+# - _consul_service_id: ID of the remote access service (default: random uuid)
 # - _consul_service_port: Port of the remote access service (default: 22)
 # - _consul_meta: Meta data of the remote access service
 
 - name: "CONSUL_CLIENT | Set default tags for resource '{{ _resource_name }}'"
   ansible.builtin.set_fact:
-    _consul_service_name: ssh
-    _consul_tags:
+    _consul_service_tags:
       - "RemoteAccessService"
-      - "ssh"
+      - "{{ _consul_service_name | default('ssh') }}"
 
 - name: CONSUL_CLIENT | Add resource as node to consul
   ansible.builtin.uri:
@@ -36,15 +37,18 @@
       Datacenter: "{{ _consul_datacenter | default('fabos') }}"
       Address: "{{ _resource_address }}"
 
-
-- name: "CONSUL_CLIENT | Register remote access service '{{ _consul_service_name }}' at Consul (discovery server)"
-  community.general.consul_agent_service:
-    scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
-    host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
-    port: "{{ ENV.CONSUL.PORT.INTERNAL }}"
-    token: "{{ _consul_token }}"
-    name: "{{ _consul_service_name }}"
-    service_port: "{{ _consul_service_port | default(22) }}"
-    address: "{{ _resource_address }}"
-    tags: "{{ _consul_tags }}"
-    meta: "{{ _consul_meta | default({}) }}"
+- name: CONSUL_CLIENT | Add Remote Access Service as consul service and link to resource
+  ansible.builtin.uri:
+    url: "{{ ENV.CONSUL.SCHEME.INTERNAL }}://{{ ENV.CONSUL.HOST.INTERNAL }}:{{ ENV.CONSUL.PORT.INTERNAL }}/v1/catalog/register"
+    method: PUT
+    headers:
+      "X-Consul-Token": "{{ ENV.CONSUL.MASTER_TOKEN }}"
+    body_format: json
+    body:
+      Node: "{{ _resource_name }}"
+      Address: "{{ _resource_address }}"
+      SkipNodeUpdate: true
+      Service:
+        ID: "{{ _resource_remote_access_service_id }}"
+        Service: "{{ _consul_service_name | default('ssh') }}"
+        Tags: "{{ _consul_service_tags }}"
