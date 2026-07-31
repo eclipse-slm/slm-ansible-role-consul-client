@@ -20,6 +20,7 @@
 
 - name: "CONSUL_CLIENT | Set default tags for resource '{{ _resource_name }}'"
   ansible.builtin.set_fact:
+    _consul_service_id: "{{ _consul_service_id | default((2**128) | random | to_uuid) }}"
     _consul_service_tags:
       - "RemoteAccessConsulService"
       - "RemoteAccessService"
@@ -52,15 +53,10 @@
       Address: "{{ _resource_address }}"
       SkipNodeUpdate: true
       Service:
-        ID: "{{ _consul_service_id | default('') }}"
+        ID: "{{ _consul_service_id }}"
         Service: "{{ _consul_service_name | default('ssh') }}"
         Tags: "{{ _consul_service_tags }}"
   register: register_service_response
-
-- debug:
-    var: register_service_response.json
-
-- fail:
 
 - name: "CONSUL_CLIENT | Register KV Entry of Remote Access Service"
   community.general.consul_kv:
