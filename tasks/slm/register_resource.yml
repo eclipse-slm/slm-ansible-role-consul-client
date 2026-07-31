@@ -52,6 +52,20 @@
       Address: "{{ _resource_address }}"
       SkipNodeUpdate: true
       Service:
-        ID: "{{ _resource_remote_access_service_id }}"
+        ID: "{{ _consul_service_id | default('') }}"
         Service: "{{ _consul_service_name | default('ssh') }}"
         Tags: "{{ _consul_service_tags }}"
+  register: register_service_response
+
+- debug:
+    var: register_service_response.json
+
+- fail:
+
+- name: "CONSUL_CLIENT | Register KV Entry of Remote Access Service"
+  community.general.consul_kv:
+    host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
+    port: "{{ ENV.CONSUL.PORT.INTERNAL }}"
+    token: "{{ _consul_token }}"
+    key: "{{ _consul_service_id }}"
+    value: "{{ _consul_service_kv_value | default({}) }}"
