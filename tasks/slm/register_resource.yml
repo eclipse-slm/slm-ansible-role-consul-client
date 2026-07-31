@@ -9,7 +9,7 @@
       - (_resource_name is defined) and (_resource_name|length > 0)                                 # Name of the service
       - (_resource_id is defined) and (_resource_id|length > 0)                                   # ID of the resource
       - (_resource_address is defined) and (_resource_address|length > 0)
-      # - (_resource_remote_access_service_id is defined) and (_resource_remote_access_service_id|length > 0)  # Remote access service ID                                                                                 # Meta data of the service
+      - (_vault_credential_id is defined) and (_vault_credential_id|length > 0)                             # ID of the credential in vault
 
 ### Optional Inputs:
 # - _consul_datacenter: Datacenter of the resource (default: fabos)
@@ -56,6 +56,9 @@
         ID: "{{ _consul_service_id }}"
         Service: "{{ _consul_service_name | default('ssh') }}"
         Tags: "{{ _consul_service_tags }}"
+        Meta:
+          credentialId: "{{ _vault_credential_id }}"
+          connectionType: "{{ _consul_service_connection_type | default('ssh') }}"
   register: register_service_response
 
 - name: "CONSUL_CLIENT | Register KV Entry of Remote Access Service"
@@ -63,5 +66,11 @@
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
     port: "{{ ENV.CONSUL.PORT.INTERNAL }}"
     token: "{{ _consul_token }}"
+    key: "{{ key }}"
+    value: "{{ value }}"
+  vars:
+    # key: "resources/data/{{ _resource_id }}/remoteAccess/{{ _consul_service_id }}/CredentialUsernamePassword"
     key: "{{ _consul_service_id }}"
-    value: "{{ _consul_service_kv_value | default({}) }}"
+    value:
+      CredentialClasses:
+        - "CredentialUsernamePassword"
