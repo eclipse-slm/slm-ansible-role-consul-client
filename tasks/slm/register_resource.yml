@@ -31,7 +31,7 @@
     url: "{{ ENV.CONSUL.SCHEME.INTERNAL }}://{{ ENV.CONSUL.HOST.INTERNAL }}:{{ ENV.CONSUL.PORT.INTERNAL }}/v1/catalog/register"
     method: PUT
     headers:
-      "X-Consul-Token": "{{ ENV.CONSUL.MASTER_TOKEN }}"
+      "X-Consul-Token": "{{ _consul_token }}"
     body_format: json
     body:
       ID: "{{ _resource_id }}"
@@ -46,7 +46,7 @@
     url: "{{ ENV.CONSUL.SCHEME.INTERNAL }}://{{ ENV.CONSUL.HOST.INTERNAL }}:{{ ENV.CONSUL.PORT.INTERNAL }}/v1/catalog/register"
     method: PUT
     headers:
-      "X-Consul-Token": "{{ ENV.CONSUL.MASTER_TOKEN }}"
+      "X-Consul-Token": "{{ _consul_token }}"
     body_format: json
     body:
       Node: "{{ _resource_name }}"
