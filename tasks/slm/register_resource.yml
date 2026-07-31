@@ -67,7 +67,7 @@
     port: "{{ ENV.CONSUL.PORT.INTERNAL }}"
     token: "{{ _consul_token }}"
     key: "{{ key }}"
-    value: "{{ value }}"
+    value: "{{ value | to_yaml }}"
   vars:
     # key: "resources/data/{{ _resource_id }}/remoteAccess/{{ _consul_service_id }}/CredentialUsernamePassword"
     key: "{{ _consul_service_id }}"
