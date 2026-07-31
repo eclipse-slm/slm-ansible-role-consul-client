@@ -36,6 +36,8 @@
       Node: "{{ _resource_name }}"
       Datacenter: "{{ _consul_datacenter | default('fabos') }}"
       Address: "{{ _resource_address }}"
+      NodeMeta:
+        resourceId: "{{ _resource_id }}"
 
 - name: CONSUL_CLIENT | Add Remote Access Service as consul service and link to resource
   ansible.builtin.uri:
