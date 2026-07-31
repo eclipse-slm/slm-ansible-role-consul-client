@@ -21,6 +21,7 @@
 - name: "CONSUL_CLIENT | Set default tags for resource '{{ _resource_name }}'"
   ansible.builtin.set_fact:
     _consul_service_tags:
+      - "RemoteAccessConsulService"
       - "RemoteAccessService"
       - "{{ _consul_service_name | default('ssh') }}"
 
