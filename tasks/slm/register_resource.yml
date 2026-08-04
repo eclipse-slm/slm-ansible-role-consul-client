@@ -55,6 +55,7 @@
       Service:
         ID: "{{ _consul_service_id }}"
         Service: "{{ _consul_service_name | default('ssh') }}"
+        Port: "{{ _consul_service_port | default(22) }}"
         Tags: "{{ _consul_service_tags }}"
         Meta:
           credentialId: "{{ _vault_credential_id }}"
@@ -69,7 +70,6 @@
     key: "{{ key }}"
     value: "{{ value | to_yaml }}"
   vars:
-    # key: "resources/data/{{ _resource_id }}/remoteAccess/{{ _consul_service_id }}/CredentialUsernamePassword"
     key: "{{ _consul_service_id }}"
     value:
       CredentialClasses:
