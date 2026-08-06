@@ -1,5 +1,5 @@
 ### Inputs
-- name: "Assert inputs of 'consul/client | create_or_add_config.yml'"
+- name: "CONSUL_CLIENT | Assert inputs | store_app_config.yml"
   ansible.builtin.assert:
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)     # Scheme of the Consul instance
@@ -8,7 +8,7 @@
       - (_consul_token is defined) and (_consul_token|length > 0)                               # Token to authenticate with Consul
       - (_app_name is defined) and (_app_name|length > 0)                                       # Name of the app for which the config should be get
 
-- name: "Store app config in Consul"
+- name: "CONSUL_CLIENT | Store app config in Consul"
   community.general.consul_kv:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -16,5 +16,5 @@
     token: "{{ _consul_token }}"
     key: "{{ item.key }}"
     value: "{{ item.value }}"
-  with_items:
+  loop:
     - { key: "config/{{ _app_name }}/data", value: "{{ app_configs[_app_name] | to_yaml }}" }

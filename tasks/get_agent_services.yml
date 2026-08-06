@@ -1,5 +1,5 @@
 ### Inputs
-- name: "Assert inputs of 'consul/client | get_agent_services.yml'"
+- name: "CONSUL_CLIENT | Assert inputs | get_agent_services.yml"
   ansible.builtin.assert:
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)       # Scheme of the Consul instance
@@ -7,7 +7,7 @@
       - (ENV.CONSUL.PORT.INTERNAL is defined)                                                     # Port of the Consul instance
       - (_consul_token is defined) and (_consul_token|length > 0)                                 # Token to authenticate with Consul
 
-- name: CONSUL_CLIENT | Get registered services from Consul
+- name: "CONSUL_CLIENT | Get registered services from Consul"
   ansible.builtin.uri:
     url: "{{ base_url }}/v1/agent/services"
     method: GET
@@ -19,6 +19,6 @@
   register: consul_registered_services
 
 ### Outputs
-- name: CONSUL_CLIENT | Set fact for registered services
+- name: "CONSUL_CLIENT | Set fact for registered services"
   ansible.builtin.set_fact:
     consul_registered_services: "{{ consul_registered_services.json }}"

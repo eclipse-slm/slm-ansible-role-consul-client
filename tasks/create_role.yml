@@ -1,6 +1,6 @@
 ### Inputs
-- name: "Assert inputs of 'consul/client | create_role.yml'"
-  assert:
+- name: "CONSUL_CLIENT | Assert inputs | create_role.yml"
+  ansible.builtin.assert:
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)     # Scheme of the Consul instance
       - (ENV.CONSUL.HOST.INTERNAL is defined) and (ENV.CONSUL.HOST.INTERNAL|length > 0)         # Host of the Consul instance
@@ -10,7 +10,7 @@
       - (_policies is defined) and (_policies|length > 0)                                       # Policies that should be created and assigned to the role.
       - (_binding_rule is defined) and (_binding_rule|length > 0)                               # Binding rule that should be created for the role
 
-- name: "Create policies"
+- name: "CONSUL_CLIENT | Create policies"
   community.general.consul_policy:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -22,7 +22,7 @@
   loop_control:
     loop_var: policy_item
 
-- name: "Create Consul role '{{ _role_name }}'"
+- name: "CONSUL_CLIENT | Create Consul role '{{ _role_name }}'"
   community.general.consul_role:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -31,7 +31,7 @@
     name: "{{ _role_name }}"
     policies: "{{ _policies | json_query('[].{name: name}') }}"
 
-- name: "Create a binding rule for role '{{ _role_name }}' and auth method 'keycloak'"
+- name: "CONSUL_CLIENT | Create a binding rule for role '{{ _role_name }}' and auth method 'keycloak'"
   community.general.consul_binding_rule:
     scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
     host: "{{ ENV.CONSUL.HOST.INTERNAL }}"

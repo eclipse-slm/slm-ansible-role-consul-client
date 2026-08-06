@@ -1,11 +1,11 @@
 ### Inputs
-- name: "Assert inputs of 'utils | add_to_app_config.yml'"
+- name: "CONSUL_CLIENT | Assert inputs | add_to_app_config.yml"
   ansible.builtin.assert:
     that:
       - (_app_name is defined) and (_app_name|length > 0)   # Name of the app for which the app config should be added
       - (_config is defined) and (_config|length > 0)      # Config which should be added
 
-- name: "Add config to variable app_configs['{{ _app_name }}']"
+- name: "CONSUL_CLIENT | Add config to variable app_configs['{{ _app_name }}']"
   ansible.builtin.set_fact:
     app_configs: "{{ app_configs | default({}) | combine(
     { 

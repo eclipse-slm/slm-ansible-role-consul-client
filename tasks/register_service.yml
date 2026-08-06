@@ -1,5 +1,5 @@
 ### Inputs
-- name: "CONSUL_CLIENT | Assert inputs of 'consul/client | register_service.yml'"
+- name: "CONSUL_CLIENT | Assert inputs | register_service.yml"
   ansible.builtin.assert:
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)       # Scheme of the Consul instance
