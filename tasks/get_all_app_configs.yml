@@ -1,0 +1,43 @@
+### Inputs
+- name: "CONSUL_CLIENT | Assert inputs | get_all_app_configs.yml"
+  ansible.builtin.assert:
+    that:
+      - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)     # Scheme of the Consul instance
+      - (ENV.CONSUL.HOST.INTERNAL is defined) and (ENV.CONSUL.HOST.INTERNAL|length > 0)         # Host of the Consul instance
+      - (ENV.CONSUL.PORT.INTERNAL is defined)                                      # Port of the Consul instance
+      - (_consul_token is defined) and (_consul_token|length > 0)     # Token to authenticate with Consul
+
+- name: "CONSUL_CLIENT | Get all KV paths from Consul"
+  ansible.builtin.uri:
+    url: "{{ ENV.CONSUL.SCHEME.INTERNAL }}://{{ ENV.CONSUL.HOST.INTERNAL }}:{{ ENV.CONSUL.PORT.INTERNAL }}/v1/kv?keys"
+    method: GET
+    headers:
+      "X-Consul-Token": "{{ _consul_token }}"
+    return_content: true
+    status_code: 200,404
+  register: app_config_consul_response
+
+- name: "CONSUL_CLIENT | Extract KV paths from response"
+  ansible.builtin.set_fact:
+    kv_paths: "{{ app_config_consul_response.json }}"
+
+- name: "CONSUL_CLIENT | Filter KV paths to only include those matching the pattern 'config/<app_name>/data'"
+  ansible.builtin.set_fact:
+    kv_paths: "{{ kv_paths | select('match', '^config/[^/]+/data$') | list }}"
+
+- name: "CONSUL_CLIENT | Extract app names from filtered KV paths"
+  ansible.builtin.set_fact:
+    app_names: "{{ kv_paths | map('regex_replace', '^config/([^/]+)/data$', '\\1') | list }}"
+
+- name: "CONSUL_CLIENT | Print app names found"
+  ansible.builtin.debug:
+    var: app_names
+
+- name: "CONSUL_CLIENT | Get config for each app and store in app_configs"
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/get_app_config.yml"
+  loop: "{{ app_names }}"
+  loop_control:
+    loop_var: _app_name
+
+### Outputs
+# - app_configs: A dictionary containing the configs for all apps, where each key is the app name and the value is the corresponding config dictionary.
