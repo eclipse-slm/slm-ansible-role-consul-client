@@ -46,6 +46,8 @@
 #         | from_yaml
 #       }}
 
+
+### Outputs
 - name: "CONSUL_CLIENT | Add config to variable app_configs['{{ _app_name }}']"
   ansible.builtin.set_fact:
     app_configs: "{{ app_configs | default({}) | combine(
