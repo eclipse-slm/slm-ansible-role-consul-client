@@ -3,6 +3,7 @@
 dependency:
   name: galaxy
   options:
+    force: true
     ignore-certs: false
     ignore-errors: false
     role-file: requirements.yml
@@ -43,16 +44,14 @@ ansible:
         - --execution-environment-image ghcr.io/ansible/community-ansible-dev-tools:latest
 
   playbooks:
-    create: create.yml
+    create: ../default/create.yml
+    destroy: ../default/destroy.yml
+    prepare: ../default/prepare.yml
     converge: converge.yml
-    destroy: destroy.yml
-    cleanup: cleanup.yml
-    prepare: prepare.yml
-    side_effect: side_effect.yml
     verify: verify.yml
 
 scenario:
-  name: default
+  name: all
   test_sequence:
     - dependency
     - cleanup

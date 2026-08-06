@@ -6,7 +6,7 @@
   connection: local
   gather_facts: false # Disable if your role does not rely on facts
   vars_files:
-    - env.yml
+    - ../default/env.yml
     - vars/main.yml
   tasks:
     - name: Apply role | REGISTER_SERVICE

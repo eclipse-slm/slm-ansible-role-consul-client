@@ -1,0 +1,32 @@
+---
+# Purpose: bring the instance to the desired state by running the role under test.
+# Molecule calls this playbook with `molecule converge`.
+- name: Converge | APP_CONFIG
+  hosts: localhost
+  gather_facts: false # Disable if your role does not rely on facts
+  vars_files:
+    - ../default/env.yml
+  vars:
+    configs:
+      - name: "test-app-1"
+        config_values:
+          key1: "value1"
+          key2: "value2"
+      - name: "test-app-2"
+        config_values:
+          key3: "value3"
+          key4: "value4"
+  tasks:
+    - name: Apply role under test | CREATE_OR_ADD_CONFIG
+      ansible.builtin.include_role:
+        name: ../../../slm-ansible-role-consul-client
+        tasks_from: create_or_add_config
+      vars:
+        _app_name: "{{ item.name }}"
+        _config: "{{ item.config_values }}"
+      loop: "{{ configs }}"
+
+    - name: Apply role under test | GET_ALL_APP_CONFIGS
+      ansible.builtin.include_role:
+        name: ../../../slm-ansible-role-consul-client
+        tasks_from: get_all_app_configs

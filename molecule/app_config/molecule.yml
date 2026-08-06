@@ -1,0 +1,68 @@
+---
+# Dependency management (download roles/collections)
+dependency:
+  name: galaxy
+  options:
+    force: true
+    ignore-certs: false
+    ignore-errors: false
+    role-file: requirements.yml
+    requirements-file: requirements.yml
+
+platforms:
+  - name: molecule-consul
+    image: hashicorp/consul:1.22.3
+    command: consul agent -server -dev -bind=0.0.0.0 -client=0.0.0.0 -bootstrap-expect 1
+    environment:
+      CONSUL_ACL_MASTER_TOKEN: "myroot"
+    ports:
+      - "8500:8500"
+      - "8300:8300"
+      - "8301:8301"
+
+
+ansible:
+  cfg:
+    defaults:
+      host_key_checking: false
+      verbosity: 1
+    ssh_connection:
+      pipelining: true
+  env:
+    ANSIBLE_FORCE_COLOR: "1"
+    ANSIBLE_LOAD_CALLBACK_PLUGINS: "1"
+
+  executor:
+    backend: ansible-playbook
+    args:
+      ansible_playbook:
+        - --diff
+        - --force-handlers
+        - -e _consul_token=myroot
+      ansible_navigator:
+        - --mode stdout
+        - --pull-policy missing
+        - --execution-environment-image ghcr.io/ansible/community-ansible-dev-tools:latest
+
+  playbooks:
+    create: ../default/create.yml
+    destroy: ../default/destroy.yml
+    prepare: ../default/prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+scenario:
+  name: app_config
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
